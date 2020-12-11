@@ -1105,7 +1105,7 @@ Using QEWD-JSdb in this way is a great way to familiarise yourself with how it w
 provides a *playground* where you can try things out during REST API development or interactive
 message handler development.
 
-Find out all the details in the [REPL Document](./REPL).
+Find out all the details in the [REPL Document](./REPL.md).
 
 
 
