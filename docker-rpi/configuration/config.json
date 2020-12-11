@@ -1,0 +1,19 @@
+{
+  "qewd_up": true,
+  "qewd": {
+    "port": 8080,
+    "poolsize": 2,
+    "managementPassword": "secret",
+    "database": {
+      "type": "dbx",
+      "params": {
+        "database": "IRIS",
+        "host": "192.168.1.100",
+        "tcp_port": 7041,
+        "username": "_SYSTEM",
+        "password": "SYS",
+        "namespace": "USER"
+      }
+    }
+  }
+}
