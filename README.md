@@ -904,6 +904,7 @@ match your particular set-up.
 You'll see that it's a file with JSON content:
 
         {
+          "qewd_up": true,
           "qewd": {
             "poolSize": 2,
             "port": 8080,
@@ -1020,78 +1021,92 @@ QEWD will start running in the Container, and you'll see a lengthy log report, f
 
 Your QEWD system is now ready for use.  
 
-
+----
 
 # Testing QEWD
 
-Start up the QEWD Monitor application in a browser:
+## Try out the QEWD Monitor Application
+
+The simplest way to confirm that QEWD is working correctly is to try running the
+*QEWD Monitor* application.  This will have already been installed for you.
+
+Start up the QEWD Monitor application in a browser using the URL shown below,
+replacing *xx.xx.xx.xx* with the IP address or domain name of the machine on which
+you are running QEWD (or the QEWD Container).:
+
+- Native QEWD system on Windows, Linux, Raspberry Pi:
+
+        http://xx.xx.xx.xx:8080/qewd-monitor-adminui
+
+  *Note: if you changed the QEWD port value in your *config.json* file, you'll need to
+change the port in the URL above*.
 
 
+- Docker QEWD system:
+
+        http://xx.xx.xx.xx:3000/qewd-monitor-adminui
+
+  Note: if you mapped the QEWD Listener port in the *docker run* command to a different port
+(eg -p 8081:8080), you'll need to change the port in the URL above to the mapped host port.
 
 
-# QEWD-JSdb
+You should see the *QEWD Monitor* login screen and prompt.  Use the *managementPassword*
+value that was specified in your *config.json* file (by default it was set to *secret*).
+
+You should now see the *About* overview page which will confirm the versions you are using
+of various critical components.  In particular, you should check the *Database* value.
+This should confirm that you are indeed accessing your IRIS database, eg:
+
+        IRIS version: 2020.3 build 221
+
+If you aren't seeing this, or if you see database access errors appearing in the
+QEWD process log, then you probably haven't configured the database connection
+settings correctly in your *config.json* file.  If so:
+
+- shut down the QEWD process (CTRL & C is sufficient to do this);
+- edit the */configuration/config.json* file
+- restart the QEWD process (either using *npm start* or the *docker run* command, depending on
+your QEWD version)
 
 
-If you're running QEWD on Windows, create *qewd_jsdb.js* containing:
+However, if IRIS is displaying as your database, then congratulations!  Everything is working 
+correctly.  Try some of the other options in the QEWD Monitor menu panel.  You can:
+
+- view the QEWD Master and Worker Processes, and optionally stop them
+- view and explore your IRIS database (using a tree view or a graphical view)
+- view and explore active QEWD Sessions, and optionally terminate them
 
 
-        function jsdb() {
-          const qewd_mg_dbx = require('qewd-mg-dbx');
-          const DocumentStore = require('ewd-document-store');
-          let params = {
-          database: {
-            type: 'IRIS',
-            host: '192.168.1.171',
-            tcp_port: 9093,
-            username: '_SYSTEM',
-            password: 'secret',
-            namespace: 'USER'
-          }
-          };
-          let db = new qewd_mg_dbx(params);
-          let status = db.open();
-          if (status.error) return status;
-          let documentStore = new DocumentStore(db);
-          documentStore.close = db.close.bind(db);
-          return documentStore;
-        };
-        module.exports = jsdb();
+## Check on your IRIS System
 
+When you start up the *QEWD Monitor* application, even before you actually enter the
+Management Password, QEWD has already set up a QEWD Session on your IRIS system.  A 
+QEWD Session is represented by data in the QEWD Session Global which, by default, is
+a Global named *CacheTempEWDSession*.  You can [change this in your *config.json* file](./CONFIG.md)
+if you wish.
 
-
-
-
-
-
+So, use your favourite tool for viewing IRIS Globals and look for the *^CacheTempEWDSession* Global.
 
 ----
 
+# QEWD-JSdb
 
+QEWD uses a built-in abstraction of your IRIS database, known as 
+[QEWD-JSdb](https://github.com/robtweed/qewd-jsdb).  When you explore your IRIS
+database using the *QEWD-Monitor* application, it's all being done via the
+QEWD-JSdb abstraction.
 
+One of the things that has been included in your QEWD Installation directory is a file
+named *jsdb_shell.js*.  This is a Node.js module that allows you to access and use
+the QEWD-JSdb abstraction of your connected IRIS database, interactively from within the
+Node.js REPL (ie the Node.js interactive shell).
 
-# Try the QEWD-Monitor Application
+Using QEWD-JSdb in this way is a great way to familiarise yourself with how it works, and
+provides a *playground* where you can try things out during REST API development or interactive
+message handler development.
 
-You can check if QEWD is working correctly by running the
-*qewd-monitor* application that will now have been installed:
+Find out all the details in the [REPL Document](./REPL).
 
-Start the QEWD-Monitor application in your browser using the URL:
-
-        http://x.x.x.x:3000/qewd-monitor
-
-or try the latest version:
-
-        http://x.x.x.x:3000/qewd-monitor-adminui
-
-Replace the *x.x.x.x* with the IP address or domain name of your Linux server.
-
-You'll need to enter the QEWD Management password.  Use the value that you
-specified in the *managementPassword* property in the *~/qewd/configuration/config.json* file.
-This was pre-set to *secret*.
-
-You'll now see the Overview panel, from where you can monitor your QEWD run-time environment, view the master and worker process activity.
-
-If the *qewd-monitor* application works correctly, then you can be sure that QEWD
-is working correctly and is ready for use.
 
 
 # Stopping QEWD
@@ -1099,26 +1114,32 @@ is working correctly and is ready for use.
 if you're running QEWD as a foreground process in a terminal window, you can simply type *CTRL&C* to stop
 QEWD.
 
-Alternatively you can stop QEWD from within the *qewd-monitor* or *qewd-monitor-adminui* applications.
-In the Overview or Processes screeens, click the stop button next to the *Master* process.  QEWD will
-shut down and the *qewd-monitor* or *qewd-monitor-adminui* applications will no longer work.
+if you're running the Dockerised version of QEWD, you can use:
+
+        docker stop qewd
+
+Alternatively you can stop QEWD from within the *Qewd Monitor* application.
+In the Processes screeen, click the stop button next to the *Master* process.  QEWD will
+shut down and the *QEWD Monitor* application will no longer work.
 
 
 # Start Developing
 
-Now that you have QEWD up and running on your Linux system, you can begin developing both
+Now that you have QEWD up and running with IRIS, you can begin developing both
 REST APIs and/or interactive/WebSocket applications.
 
 Your QEWD system can support both at once, and you can develop and run as many REST APIs as you
 wish and as many simultaneous interactive applications as you wish.
 
 From this point onwards, there's no difference in how you develop QEWD applications,
-regardless of the Operating System you use, version of Node.js you use, or type of database
-you use (YottaDB, Cach&eacute; or IRIS).  The only difference will be in file paths.
+regardless of the version of QEWD you're using, the Operating System you're using or
+even the version of Node.js you use.  The only difference will be in file paths.
 
 So you can now use the following tutorials:
 
-- [this tutorial](https://github.com/robtweed/qewd-baseline/blob/master/INTERACTIVE.md)
+- to develop REST APIs, get started with [this document](./REST.md)
+
+- [this tutorial](./INTERACTIVE.md)
 explains how to develop interactive applications using the *qewd-client* browser module.
 This is a useful tutorial to take as it will help to explain the basics of how
 QEWD supports interactive, WebSocket message-based applications, and how you handle those messages
@@ -1128,44 +1149,10 @@ in your browser's logic.  Note that your version of QEWD includes the *qewd-clie
 can can find out how to develop a modern interactive WebSocket application whose front-end uses the  
 [*mg-webComponents*](https://github.com/robtweed/mg-webComponents) framework
 that has also been automatically installed in your QEWD system.
-[See this document, starting at the *mg-webCOmponents Framework* section](https://github.com/robtweed/qewd-microservices-examples/blob/master/WINDOWS-IRIS-2.md#the-mg-webcomponents-framework)
+[See this document, starting at the *mg-webComponents Framework* section](https://github.com/robtweed/qewd-microservices-examples/blob/master/WINDOWS-IRIS-2.md#the-mg-webcomponents-framework)
 
 
-- to develop REST APIs, get started with [this document](./REST.md)
-
-- to find out more about how QEWD abstracts the YottaDB database as persistent 
-JSON objects, see the [QEWD-JSdb documentation](https://github.com/robtweed/qewd-jsdb).
-You can try the
-QEWD-JSdb REPL by using the copy of the *jsdb_shell.js* module that is included in the Node.js REPL:
-
-        cd ~/qewd
-        node
-
-You'll see the Node.js REPL shell response:
-
-        Welcome to Node.js v14.13.1.
-        Type ".help" for more information.
-        > 
-
-Now type:
-
-        > var jsdb = require('./jsdb_shell')
-
-Now you can try out any of the QEWD-JSdb APIs.  For example, remember that *test* global we
-created when installing and testing YottaDB?  Try this:
-
-        > var doc = jsdb.use('test')
-        > doc.getDocument()
-
-You should see:
-
-        { foo: "bar" }
-
-If you have an existing YottaDB system, you can use QEWD-JSdb to abstract any of your existing Global Storage.
-
-To find out more about QEWD-JSdb, you can try out the 
-[QEWD-JSdb REPL-based tutorial](https://github.com/robtweed/qewd-jsdb/blob/master/REPL.md#getting-started-with-qewd-jsdb).
-
+-----
 
 ## License
 
