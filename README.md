@@ -1,7 +1,7 @@
 # Installing QEWD with a Networked Connection to IRIS
  
 Rob Tweed <rtweed@mgateway.com>  
-10 December 2020, M/Gateway Developments Ltd [http://www.mgateway.com](http://www.mgateway.com)  
+11 December 2020, M/Gateway Developments Ltd [http://www.mgateway.com](http://www.mgateway.com)  
 
 Twitter: @rtweed
 
@@ -95,6 +95,9 @@ The version and date may be higher/later than shown above.
 
 Once you've installed the routines, you can delete the cloned *mgsi* repository directory.
 
+Now skip forward to [start the *mgsi* SuperServer](#starting-the-mgsi-superserver).
+
+----
 
 ## Dockerised Version of IRIS
 
@@ -186,7 +189,7 @@ host system.  Then restart the container, omitting the mapping of the *mgsi* hos
 ----
 
 
-## Starting the *mgsi* "SuperServer"
+## Starting the *mgsi* SuperServer
 
 Before QEWD can access your IRIS system over a network connection, you need to start the *mgsi*
 "SuperServer".  This will listen on a TCP port for incoming connection requests: by default
@@ -199,7 +202,19 @@ different host port.  QEWD will need to connect to that mapped host port.
 
 Note 2: you must start the *mgsi* "SuperServer" from the *%SYS* namespace.
 
+Start an IRIS Terminal session.  If you are using the IRIS Container, if you haven't
+already started a Terminal session, you do so by typing:
+
+        docker exec -it my-iris iris session IRIS
+
+
 To start it using the default port (7041):
+
+
+        // if necessary:
+        USER> zn "%SYS"
+        // then...        
+
 
         %SYS> d start^%zmgsi(0)
 
@@ -209,10 +224,11 @@ If you want to use a different port, change the argument from 0 to the port you 
         %SYS> d start^%zmgsi(7100)
 
 
-Note 3: Remember that if you stop and restart IRIS, you'll need to restart the *mgsi* SuperServer again.  You might want to set up an automated IRIS startup script to do this (refer to InterSystems documentation).
+Note 3: To exit the IRIS Terminal, simply type *h* (ie *halt*) and hit the *Enter* key.
 
+Note 4: Remember that if you stop and restart IRIS, you'll need to restart the *mgsi* SuperServer again.  You might want to set up an automated IRIS startup script to do this (refer to InterSystems documentation).
 
-Note 4: In the instructions that follow, I'll be assuming that your IRIS system is listening on port 7041, and the IP address of the system on which IRIS is running (or the IRIS Container is running) is *192.168.1.100*.  Adjust the examples appropriately for your system/configuration.
+Note 5: In the instructions that follow, I'll be assuming that your IRIS system is listening on port 7041, and the IP address of the system on which IRIS is running (or the IRIS Container is running) is *192.168.1.100*.  Adjust the examples appropriately for your system/configuration.
 
 
 IRIS is now ready for connection to QEWD.
@@ -249,45 +265,57 @@ You first need to [install Node.js](https://nodejs.org) on your Windows machine(
 Do not install earlier versions of Node.js, and if you already have an earlier version of Node.js
 installed, you will need to update it.
 
+### Clone this Repository
 
-### Create a Directory for QEWD
+The easiest way to prepare your Windows System for running QEWD natively is to first clone
+the this repository from Github.  Of course, you'll need to first make sure
+you have [*git* installed](https://git-scm.com) on your Windows system.
 
-The next step is to create a directory in which your QEWD system will run.
+Then, in a Windows Console session, from the directory of your choice, run:
 
-The name/location of this directory on your Windows system is up to you, but for the purposes
-of this tutorial we'll assume it is *C:\qewd:
+        git clone https://github.com/robtweed/qewd-starter-kit-iris-networked
 
+If you were in the root directory on your C: drive when you ran the *git clone* command,
+you'll see that the repository has been cloned into *C:\qewd-starter-kit-iris-networked*.
 
-### Create a *package.json* File
-
-Next, create a file named *package.json* in your QEWD directory, eg *C:\qewd\package.json*
-
-It should contain the following:
-
-        {
-          "name": "qewd-up",
-          "version": "1.0.0",
-          "description": "Automated QEWD Builder",
-          "author": "Rob Tweed <rtweed@mgateway.com>",
-          "scripts": {
-            "start": "node node_modules/qewd/up/run_native"
-          },
-          "dependencies": {
-            "qewd": ""
-          }
-        }
+The repository contains a ready-made set of QEWD installation files for Windows.  These are
+in the */windows* folder.  So we're now going to create a QEWD Installation directory
+on your Windows system from these.  In this tutorial, I'm going to create the QEWD
+installation in the *C:\qewd* directory.  To do so, in the Windows Console session, type:
 
 
-### Create a *configuration* Sub-directory
-
-Next, create a sub-directory named *configuration* under your QEWD directory, eg: *C:\qewd\configuration*
+        move C:\qewd-starter-kit-iris-networked\windows c:\qewd
 
 
-### Create a *config.json* File
+Modify this command appropriately for your requirements.
 
-Next, switch to the *configuration* directory you created in the previous step, and now create a file within it named *config.json*, eg: *C:\qewd\configuration\config.json*.
+You'll now have a QEWD Installation directory (*C:\qewd*) that contains:
 
-It should contain the following properties:
+        C:\qewd
+           |
+           |- package.json
+           |
+           |- jsdb_shell.js
+           |
+           |- configuration
+                  |
+                  |- config.json
+
+
+If you want, you can now remove the cloned repository directory (eg *C:\qewd-starter-kit-iris-networked*).
+
+
+
+### Edit the *config.json* File
+
+The file named *config.json* in your QEWD Installation directory, eg: *C:\qewd\configuration\config.json*,
+tells QEWD how to set itself up and, critically, where to find the IRIS system on your network and how to
+connect to it via its *mgsi* SuperServer.
+
+The copy of *config.json* that has been created is a template version, and you'll need to edit it to
+match your particular set-up.
+
+You'll see that it's a file with JSON content:
 
         {
           "qewd": {
@@ -301,30 +329,34 @@ It should contain the following properties:
                 "host": "192.168.1.100",
                 "tcp_port": 7041,
                 "username": "_SYSTEM",
-                "password": "secret",
+                "password": "SYS",
                 "namespace": "USER"
               }
             }
           }
         }
 
-**IMPORTANT**: you will need to change some of the values within this file to match your setup and configuration.
-See [the CONFIG documentation](./CONFIG.md) for details.
+
+The only values you'll definitely need change for now are the following *qewd.database.params* values:
+
+- *host*: the IP Address or domain name of the system on which your IRIS database is running
+- *tcp_port*: the port on which the *mgsi* SuperServer is listening on your IRIS system.  If
+you started this using the default port (7041), you can leave this value alone.
 
 
-### Quick Check Before you Continue
+  **Note**: if you are running the IRIS Community Edition Docker version, when you started
+its Container, you may have mapped the *mgsi* listener port to a different host port 
+(eg using the *docker run* parameter *-p 9093:7041).  If so, the *tcp_port* value
+in your *config.json* file should be the mapped host port (eg 9093).
 
-So you should now have everything needed for a minimal but functional QEWD system that will 
-connect to IRIS over a network connection.  You should have a QEWD installation directory similar
-to this:
+You *may* also need to change the IRIS *password* value, particularly if you're using the
+IRIS Community Edition Docker Container.
 
-        C:\qewd
-           |
-           |- package.json
-           |
-           |- configuration
-                  |
-                  |- config.json
+
+To find out more about these and other available properties in the *config.json*
+file, see [the CONFIG documentation](./CONFIG.md) within this repository for details.
+
+Save your edited version of the *config.json* file and you're ready to install QEWD.
 
 
 ### Install QEWD
@@ -341,6 +373,8 @@ Node.js/NPM will use the information in the *package.json* file to install QEWD 
 When it is finished, the QEWD installation directory should now look like this:
 
         C:\qewd
+           |
+           |- jsdb_shell.js
            |
            |- package.json
            |
@@ -458,7 +492,7 @@ This time, QEWD will start up.  You'll see quite a lengthy log report, but it sh
 
 
 Your QEWD Windows system is now ready for use.  
-[Skip to the next section](#testing-qewd)
+Skip forwards  to the [next section on Testing your QEWD system](#testing-qewd).
 
 ----
 
@@ -485,14 +519,46 @@ If you haven't already installed *git* on your Linux system or Rasperry Pi, inst
 #### Clone This Repository
 
 Clone this repository to your Linux system or Raspberry Pi.  For example, to clone it
-to the folder ~/qewd on your machine:
+to the folder *~/qewd-starter-kit-iris-networked* on your machine:
 
         cd ~
-        git clone https://github.com/robtweed/qewd-starter-kit-iris-networked qewd
+        git clone https://github.com/robtweed/qewd-starter-kit-iris-networked
 
-The instructions in this document will assume you've cloned it
-to the ~/qewd folder.  Adjust the paths in the examples appropriately
-if you cloned to a different folder on your Linux system.
+
+The repository contains a ready-made set of QEWD installation files for 
+Linux or the Raspberry Pi.  These are
+in the */linux-rpi* folder.  So we're now going to create a QEWD Installation directory
+on your Linux system from these.  In this tutorial, I'm going to create the QEWD
+installation in the *~/qewd* directory.  To do so, in a Linux Terminal session, type:
+
+
+        mv ~/qewd-starter-kit-iris-networked/linux-rpi ~/qewd
+
+
+Modify this command appropriately for your requirements.
+
+You'll now have a QEWD Installation directory (*~/qewd*) that contains:
+
+        ~/qewd
+           |
+           |- package.json
+           |
+           |- jsdb_shell.js
+           |
+           |- install_node.js
+           |
+           |- configuration
+                  |
+                  |- config.json
+
+
+
+The instructions that follow in this tutorial will assume your QEWD Installation directory is
+*~/qewd*.  Adjust the paths in the examples appropriately
+if you're using a different directory on your Linux system.
+
+
+If you want, you can now remove the cloned repository directory (eg *~/qewd-starter-kit-iris-networked*).
 
 
 #### Dependencies
@@ -514,11 +580,11 @@ To satisfy these dependencies:
 
 If you don't have Node.js installed, the simplest approach is to use the 
 [installation script](./install_node.sh)
-included in this repository.  This has been tested with Ubuntu Linux and
+that you'll find within your QEWD Installation directory.  This has been tested with Ubuntu Linux and
 Raspberry Pi Operating Systems.
 
 
-It will install the latest version 14.x build:
+It will install the latest version 14.x build.  Simply type:
 
         cd ~/qewd
         source install_node.sh
@@ -547,21 +613,19 @@ On Ubuntu or Raspberry Pi, you can do this by running the following commands:
 These commands are safe to type even if you're unsure whether or not you've already
 installed a C++ compiler on your Linux machine.
 
-----
-
-### Installing QEWD
-
-You're now ready to install QEWD.  
+On other Linux systems or OS/X you'll need to use the appropriate equivalent commands.
 
 
-#### Edit the *config.json* File
+### Edit the *config.json* File
 
+The file named *config.json* in your QEWD Installation directory, eg: *~/qewd/configuration/config.json*,
+tells QEWD how to set itself up and, critically, where to find the IRIS system on your network and how to
+connect to it via its *mgsi* SuperServer.
 
-When you cloned this repo, the
-file *~/qewd/configuration/config.json* will have been created on your machine. 
-It should look like this:
+The copy of *config.json* that has been created is a template version, and you'll need to edit it to
+match your particular set-up.
 
-It should contain the following properties:
+You'll see that it's a file with JSON content:
 
         {
           "qewd": {
@@ -582,35 +646,34 @@ It should contain the following properties:
           }
         }
 
-**IMPORTANT**: you will need to change some of the values within this file to match your setup and configuration.
-See [the CONFIG documentation](./CONFIG.md) for details.
+
+The only values you'll definitely need change for now are the following *qewd.database.params* values:
+
+- *host*: the IP Address or domain name of the system on which your IRIS database is running
+- *tcp_port*: the port on which the *mgsi* SuperServer is listening on your IRIS system.  If
+you started this using the default port (7041), you can leave this value alone.
 
 
-#### Check the *package.json* File
+  **Note**: if you are running the IRIS Community Edition Docker version, when you started
+its Container, you may have mapped the *mgsi* listener port to a different host port 
+(eg using the *docker run* parameter *-p 9093:7041).  If so, the *tcp_port* value
+in your *config.json* file should be the mapped host port (eg 9093).
 
-When you cloned this repo, the
-file *~/qewd/package.json* will have been created on your machine. It should look like this:
-
-        {
-          "name": "qewd-up",
-          "version": "1.0.0",
-          "description": "Automated QEWD Builder",
-          "author": "Rob Tweed <rtweed@mgateway.com>",
-          "scripts": {
-            "start": "node node_modules/qewd/up/run_native"
-          },
-          "dependencies": {
-            "qewd": "",
-            "mg-dbx": ""
-          }
-        }
-
-Note the two Node.js dependencies: the modules *qewd* and *mg-dbx*.
+You *may* also need to change the IRIS *password* value, particularly if you're using the
+IRIS Community Edition Docker Container.
 
 
-#### Install QEWD and its Dependencies
+To find out more about these and other available properties in the *config.json*
+file, see [the CONFIG documentation](./CONFIG.md) within this repository for details.
 
-Installation of QEWD is a one-off step that makes use of this *package.json* file.
+Save your edited version of the *config.json* file and you're ready to install QEWD.
+
+
+### Install QEWD and its Dependencies
+
+Installation of QEWD is a one-off step that makes use of the *package.json* file
+in your QEWD Installation directory.
+
 Simply type:
 
         cd ~/qewd
@@ -709,9 +772,10 @@ QEWD will start up.  You'll see quite a lengthy log report, but it should end wi
 
 
 Your QEWD system is now ready for use.  
-[Skip to the next section](#testing-qewd)
+Skip forwards  to the [next section on Testing your QEWD system](#testing-qewd).
 
 ----
+
 
 ## Dockerised QEWD Installation on Linux or Raspberry Pi
 
@@ -722,7 +786,9 @@ and the Raspberry Pi.
 
 ### Pre-requisites
 
-In order to run the Dockerised version of QEWD, the only dependency is that you
+#### Make Sure Docker is Installed
+
+In order to run the Dockerised version of QEWD, the only key dependency is that you
 have Docker installed.
 
 Although you can run Docker Containers on Windows and OS/X, the mechanics are somewhat
@@ -759,27 +825,83 @@ To avoid this, you can do the following:
 Now you can simply use the *docker* command.
 
 
-### Create a Directory for QEWD
 
-The next step is to create a directory in which your QEWD system will run.
+#### Make Sure you have *git* Installed
 
-The name/location of this directory on your Linux system or Raspberry Pi is up to you, 
-but for the purposes of this tutorial we'll assume it is *~/qewd*
+In the next step, you're going to use the *git clone* command, so you'll need
+to make sure that *git* is installed on your system.
 
+If you haven't already installed *git* on your Linux system or Rasperry Pi, install it now, eg:
 
-### Create a *configuration* Sub-directory
-
-Next, create a sub-directory named *configuration* under your QEWD directory, eg: *~/qewd/configuration*
+        sudo apt-get install git
 
 
-### Create a *config.json* File
+### Create a QEWD Installation Directory
 
-Next, switch to the *configuration* directory you created in the previous step, and now create a file within it named *config.json*, eg: *~/qewd/configuration/config.json*.
+This is most easily done as follows:
 
-It should contain the following:
+First, clone this repository to your Linux system or Raspberry Pi.  For example, to clone it
+to the folder *~/qewd-starter-kit-iris-networked* on your machine:
+
+        cd ~
+        git clone https://github.com/robtweed/qewd-starter-kit-iris-networked
+
+
+The repository contains a ready-made set of QEWD installation files for 
+a minimal Containerised QEWD system:
+
+- if you are running Linux, they are in the */docker-linux* directory
+- if you are running a Raspberry Pi, they are in the */docker-rpi* directory
+
+So we're now going to create a QEWD Installation directory
+on your system from these.  In this tutorial, I'm going to create the QEWD
+installation in the *~/qewd* directory.  To do so, in a Terminal session, type:
+
+- Linux
+
+        mv ~/qewd-starter-kit-iris-networked/docker-linux ~/qewd
+
+- Raspberry Pi
+
+        mv ~/qewd-starter-kit-iris-networked/docker-rpi ~/qewd
+
+
+Modify this command appropriately for your requirements.
+
+You'll now have a QEWD Installation directory (*~/qewd*) that contains:
+
+        ~/qewd
+           |
+           |- jsdb_shell.js
+           |
+           |- start.sh
+           |
+           |- configuration
+                  |
+                  |- config.json
+
+
+
+The instructions that follow in this tutorial will assume your QEWD Installation directory is
+*~/qewd*.  Adjust the paths in the examples appropriately
+if you're using a different directory on your Linux system or Raspberry Pi.
+
+
+If you want, you can now remove the cloned repository directory (eg *~/qewd-starter-kit-iris-networked*).
+
+
+### Edit the *config.json* File
+
+The file named *config.json* in your QEWD Installation directory, eg: *~/qewd/configuration/config.json*,
+tells QEWD how to set itself up and, critically, where to find the IRIS system on your network and how to
+connect to it via its *mgsi* SuperServer.
+
+The copy of *config.json* that has been created is a template version, and you'll need to edit it to
+match your particular set-up.
+
+You'll see that it's a file with JSON content:
 
         {
-          "qewd_up": true,
           "qewd": {
             "poolSize": 2,
             "port": 8080,
@@ -791,19 +913,57 @@ It should contain the following:
                 "host": "192.168.1.100",
                 "tcp_port": 7041,
                 "username": "_SYSTEM",
-                "password": "secret",
+                "password": "SYS",
                 "namespace": "USER"
               }
             }
           }
         }
 
-**IMPORTANT**: you will need to change some of the values within this file to match your setup and configuration.
-See [the CONFIG documentation](./CONFIG.md) for details.
+
+The only values you'll definitely need to change for now are the following *qewd.database.params* values:
+
+- *host*: the IP Address or domain name of the system on which your IRIS database is running
+- *tcp_port*: the port on which the *mgsi* SuperServer is listening on your IRIS system. If
+you started this using the default port (7041), you can leave this value alone.
+
+  **Note**: if you are running the IRIS Community Edition Docker version, when you started
+its Container, you may have mapped the *mgsi* listener port to a different host port 
+(eg using the *docker run* parameter *-p 9093:7041).  If so, the *tcp_port* value
+in your *config.json* file should be the mapped host port (eg 9093).
+
+You *may* also need to change the IRIS *password* value, particularly if you're using the
+IRIS Community Edition Docker Container.
 
 
-Once you've edited the *config.json* file to match your setup, you're
-ready to start the QEWD Docker Container
+To find out more about these and other available properties in the *config.json*
+file, see [the CONFIG documentation](./CONFIG.md) within this repository for details.
+
+Save your edited version of the *config.json* file and you're ready to start
+the QEWD Docker Container.
+
+
+### Download the QEWD Docker Container
+
+Strictly-speaking, this step isn't completely necessary, since Docker will download the
+QEWD Container automatically the first time you try to run it.
+
+To manually download the QEWD Docker Container, do the following (you can be in
+any directory when you run this):
+
+Linux:
+
+        docker pull rtweed/qewd-server
+
+Raspberry Pi:
+
+        docker pull rtweed/qewd-server-rpi
+
+
+Enhancements are constantly being made to the QEWD Docker Container, and it's always a good
+idea to be using the latest version.  Use the *docker pull* commands above to
+ensure you always have the latest version.  If you already have the latest version, 
+*docker pull* will tell you and abort.
 
 
 ### Starting the QEWD Docker Container
@@ -834,7 +994,13 @@ the *-p* parameter if you want to use a different port on your host system.  Mak
 that the internal port (ie within the Container) is 8080, since that's what you specified QEWD
 should use in your *config.json* file.
 
+-----
+Note: in your QEWD Installation directory you'll find a script file named *start.sh*.  This contains
+a template version of the *docker run* command for your system which you can edit and then use
+instead of typing the commands above.  After editing it, you can run it as follows:
 
+        source start.sh
+-----
 
 QEWD will start running in the Container, and you'll see a lengthy log report, finishing with:
 
