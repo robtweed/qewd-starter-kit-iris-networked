@@ -1,7 +1,7 @@
-# qewd-baseline: Developing REST APIs with QEWD
+# Developing REST APIs with QEWD
  
 Rob Tweed <rtweed@mgateway.com>
-4 December 2019, M/Gateway Developments Ltd [http://www.mgateway.com](http://www.mgateway.com)  
+11 December 2020, M/Gateway Developments Ltd [http://www.mgateway.com](http://www.mgateway.com)  
 
 Twitter: @rtweed
 

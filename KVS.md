@@ -1,7 +1,7 @@
 # The QEWD-JSdb KVS Database Model
  
 Rob Tweed <rtweed@mgateway.com>  
-2 December 2019, M/Gateway Developments Ltd [http://www.mgateway.com](http://www.mgateway.com)  
+11 December 2020, M/Gateway Developments Ltd [http://www.mgateway.com](http://www.mgateway.com)  
 
 Twitter: @rtweed
 

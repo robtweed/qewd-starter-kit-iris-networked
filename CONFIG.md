@@ -4,7 +4,7 @@
 The *config.json* file contains a number of parameters that modify the behaviour of
 QEWD.  The main ones are described below:
 
-## PoolSize
+## poolSize
 
         "poolSize": 2,
 

@@ -1,7 +1,7 @@
-# qewd-baseline: Developing Interactive Applications with QEWD
+# Developing Interactive Applications with QEWD
  
 Rob Tweed <rtweed@mgateway.com>  
-12 October 2020, M/Gateway Developments Ltd [http://www.mgateway.com](http://www.mgateway.com)  
+11 December 2020, M/Gateway Developments Ltd [http://www.mgateway.com](http://www.mgateway.com)  
 
 Twitter: @rtweed
 
