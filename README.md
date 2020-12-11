@@ -233,14 +233,15 @@ Note 5: In the instructions that follow, I'll be assuming that your IRIS system 
 
 IRIS is now ready for connection to QEWD.
 
+----
 
 # Setting up your QEWD System
 
 The following will describe how to set up an absolutely minimal QEWD system that will connect to your IRIS database.  It won't include any application logic etc, but will include what's needed to run the *QEWD Monitor* applications.
 
-The QEWD system will, however, be able to then added to, so you'll be able to subsequently add:
+However, the QEWD system will be ready for you to begin adding your own:
 
-- REST APIs
+- REST APIs; and/or
 - back-end handlers for interactive WebSocket-based applications
 
 Remember that QEWD allows you to write all your logic in JavaScript, and use the IRIS database as "persistent JSON" as well as a multi-model database using the 
@@ -252,9 +253,10 @@ If required, you can also invoke IRIS functions or Class Methods via the network
 So let's get started and set up your QEWD system.  Follow the appopriate instructions below for your particular QEWD configuration/platform:
 
 - [Native QEWD Installation on Windows](#native-qewd-installation-on-windows)
-- [Native QEWD Installation on Linux or Raspberry Pi](#native-qewd-installation-on-linux-or-raspberry-pi)
-- [Dockerised QEWD Installation on Linux or Raspberry Pi](dockerised-qewd-installation-on-linux-or-raspberry-pi)
+- [Native QEWD Installation on Linux, OS/X or Raspberry Pi](#native-qewd-installation-on-linux-osx-or-raspberry-pi)
+- [Dockerised QEWD Installation on Linux or Raspberry Pi](#dockerised-qewd-installation-on-linux-or-raspberry-pi)
 
+----
 
 ## Native QEWD Installation on Windows
 
