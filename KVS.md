@@ -24,6 +24,14 @@ Retrieval of stored objects is via either a key or a field that you have opted t
 Before proceeding it is recommended that you first read and complete the [basic QEWD-JSdb tutorial](./REPL.md).  This will ensure you 
 understand what's going on in QEWD-JSdb and why!
 
+## Source Code for the *KVS* APIs
+
+Like all the QEWD-JSdb APIs, they are written in JavaScript and are built on top of the
+standard QEWD-JSdb APIs.  They are all Open Source APIs, and
+you are free to inspect and use the code as you wish, in accordance with the Apache 2 license under
+which they are made available.
+
+Find the [LISTs source code here](https://github.com/robtweed/ewd-document-store/tree/master/lib/proto/kvs).
 
 ## Enabling Use of the KVS APIs
 
