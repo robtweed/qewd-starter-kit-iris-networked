@@ -604,8 +604,441 @@ Because *id*s are unique, the *getElementById()* method returns the matching Ele
 If the specified *id* doesn't exist, it returns a *null*.
 
 
+## Interrogating the DOM
+
+You'll often want to know about features or details about the part of the DOM you're currently in.
+
+Typically that will mean you want to find out about:
+
+- An Element's Child Elements
+- An Element's Attributes
+
+### Child Elements and Child Nodes
+
+Typically you'll want to know whether the current Element has Child Elements,
+and, if so, access them.
+
+To illustrate how you can do this, try the following.
+
+First, let's remind ourselves what's currently in our DOM:
+
+        console.log(doc.dom.output(2));
+
+        <myTag>
+          <myChildTag foo="bar" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <myGrandChildTag>
+              Some text content
+            </myGrandChildTag>
+          </mySecondChildTag>
+        </myTag>
+
+Next, let's get pointers to two of the Tags
+in our DOM:
 
 
+        var tag1 = doc.dom.getElementById('firstTag')
+        var tag2 = doc.dom.getElementsByTagName('mySecondChildTag')[0]
+
+
+We can see from the listing of our DOM that the first Tag does not have any Child Nodes,
+while the second one does.  So how can we find this out from the DOM itself?  Try this:
+
+        tag1.hasChildElements()
+
+        false
+
+        tag2.hasChildElements()
+
+        true
+
+Now let's try this.  First get the 'myGrandChildTag' tag, eg:
+
+        var tag3 = tag2.firstChild
+
+        tag3.tagName
+
+        // myGrandChildTag
+
+We can confirm that this tag has no Child Elements:
+
+        tag3.hasChildElements()
+
+        false
+
+But if we try the *hasChildNodes()* method:
+
+
+        tag3.hasChildNodes()
+
+        true
+
+That's because whilst the *myGrandChildTag* Tag does not have any Child Elements, 
+it does have text content, which, in DOM terms, means it
+has a child Text Node.  Everything in the DOM is represented as Nodes!  
+
+
+Typically, we'll not just want to know if a particular Tag has Child Elements, we'll
+want to access those Child Elements.
+
+There are two ways to do this:
+
+- using the *childNodes* property
+- using the *childElements* property
+
+The *childNodes* property will return all of the immediate Child DOM Nodes of an Element.
+Those Child Nodes can be both Child Elements and Text Nodes.
+
+The *childNodes* property (like the *getElementsByTagName()* method) returns a NodeList
+of Child Nodes.  This can be treated as an Array, but is a live data structure, reflecting
+the DOM content each time one of its properties or methods is invoked.
+
+The *childElements* property will return all the immediate Child Element DOM Nodes as
+an actual Array.  It is therefore not a live data structure. Its properties and methods
+reflect the DOM content when the *childElements* array was constructed.
+
+In practice the difference between a NodeList and true Array is unlikely to be noticeable,
+unless the DOM is highly dynamic and subject to change while you're interrogating it.
+
+Let's see them in use.
+
+Our second tag has Child Elements:
+
+        tag2.tagName
+
+        // mySecondChildTag
+
+        tag2.hasChildElements()
+
+        // true
+
+So:
+
+        var children = tag2.childNodes
+        children.length
+
+        // 1
+
+        children[0].tagName
+
+        // myGrandChildTag
+
+
+And let's try this grandchild tag:
+
+        var grandChildren = children[0].childNodes
+        grandChildren.length
+
+        // 1
+
+        grandChildren[0].nodeType
+
+        // 3   ie text
+
+        grandChildren[0].nodeValue
+
+        // 'Some text content'
+
+
+
+So let's compare this with the *childElements* property:
+
+        var children = tag2.childElements
+        children.length
+
+        // 1
+
+        children[0].tagName
+
+        // myGrandChildTag
+
+
+        var grandChildren = children[0].childElements
+        grandChildren.length
+
+        // 0  - because it doesn't have any Child Elements, just a child Text Node
+
+
+
+
+### Attributes
+
+Typically you'll want to know whether the current Element has any Attributes,
+and, if so, access them.
+
+To illustrate how you can do this, try the following.
+
+First, let's remind ourselves again what's currently in our DOM:
+
+        console.log(doc.dom.output(2));
+
+        <myTag>
+          <myChildTag foo="bar" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <myGrandChildTag>
+              Some text content
+            </myGrandChildTag>
+          </mySecondChildTag>
+        </myTag>
+
+Next, let's get pointers to two of the Tags
+in our DOM, one with Attributes and one without:
+
+        var tag1 = doc.dom.getElementById('firstTag')
+        var tag2 = doc.dom.getElementsByTagName('mySecondChildTag')[0]
+
+Now interrogate the DOM about their Attributes:
+
+        tag1.hasAttributes()
+
+        // true
+
+        tag2.hasAttributes()
+
+        // false
+
+
+We can get all of the Attributes for a Tag using the *attributes* property:
+
+        var attrs = tag1.attributes
+
+What's returned is something known as a Named Node Map, again something unique to the DOM, and
+just like Node Lists, Named Node Maps are active structures, and once again implemented here
+as a Proxy Object which accesses the IRIS data every time one of its properties or methods is
+invoked, therefore reflecting the latest content in the DOM.
+
+A Named Node Map has several specific properties and methods.
+
+We can find how many Attributes were found using its *length* property:
+
+        attrs.length
+
+        // 3
+
+To access a specific Attribute, you use the *item()* method, specifying the index value as
+its argument.  Attribute *item*s are numbered from zero.  What is returned is an *Attr*
+Node object.  The most important properties of an *Attr* Node are its *name* and *value*:
+
+        attrs.item(0).name
+
+        // foo
+
+        attrs.item(0).value
+
+        // bar
+
+Of course you could find out its DOM nodeType:
+
+        attrs.item(0).nodeType
+
+        // 2  ie an Attr Node
+
+and we can find out the Element it belongs to by using the *Attr*'s *ownerElement* property:
+
+        attrs.item(0).ownerElement.tagName
+
+        // myChildTag
+
+You can also find out if the *Attr* is an *id* attribute or not:
+
+        attrs.item(0).isId
+
+        // false
+
+        attrs.item(2).isId
+
+        // true
+
+
+Returning to the *attributes* Named Node Map, you can also apply its *getNamedItem()*
+method to return the *Attr* Node for the Attribute with the specified name, eg:
+
+        attrs.getNamedItem('id').value
+
+        // firstTag
+
+        attrs.getNamedItem('foo').value
+
+        // bar
+
+Of course, if all you want is an Attribute's value, you could also use the somewhat 
+simpler Element Node's *getAttribute()* method, eg:
+
+        tag1.getAttribute('id')
+
+        // firstTag
+
+
+You can also add an Attribute using the *attributes*' *setNamedItem()* method.  This
+requires you to create an Attr Node, assigning it both a name and value, and the
+provide this Attr Node as the *setNamedItem()*'s argument.  Try it out:
+
+        var attr1 = doc.dom.createAttribute('class')
+        attr1.value = 'bingo'
+        tag1.attributes.setNamedItem(attr1)
+
+        console.log(doc.dom.output(2));
+
+        <myTag>
+          <myChildTag class="bingo" foo="bar" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <myGrandChildTag>
+              Some text content
+            </myGrandChildTag>
+          </mySecondChildTag>
+        </myTag>
+
+
+You'll probably be thinking that it's a lot easier to use the Element Node's *setAttribute()*
+method, which is quite true, ie:
+
+        tag1.setAttribute('x', 100)
+        console.log(doc.dom.output(2));
+
+        <myTag>
+          <myChildTag class="bingo" foo="bar" hello="world" id="firstTag" x="100"/>
+          <mySecondChildTag>
+            <myGrandChildTag>
+              Some text content
+            </myGrandChildTag>
+          </mySecondChildTag>
+        </myTag>
+
+*setAttribute()* is also a simple way to change the value of an existing Attribute, eg
+
+        tag1.setAttribute('x', 200)
+        console.log(doc.dom.output(2));
+
+        <myTag>
+          <myChildTag class="bingo" foo="bar" hello="world" id="firstTag" x="200"/>
+          <mySecondChildTag>
+            <myGrandChildTag>
+              Some text content
+            </myGrandChildTag>
+          </mySecondChildTag>
+        </myTag>
+
+
+
+Removing an Attribute can also be done either using the *attributes*' *removeNamedItem()*
+method, or by using the simple Element Node's *removeAttribute()* method, eg:
+
+        tag1.attributes.removeNamedItem('foo')
+        tag1.removeAttribute('x')
+        console.log(doc.dom.output(2));
+
+        <myTag>
+          <myChildTag class="bingo" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <myGrandChildTag>
+              Some text content
+            </myGrandChildTag>
+          </mySecondChildTag>
+        </myTag>
+
+
+## Inserting Elements
+
+### *insertBefore()*
+
+So far you've seen how new Elements can be added to the DOM by appending them to a 
+parent Element Node.  Of course, if the parent Element already has one or more existing
+Child Elements, the new one will be appended as a new *lastChild*.
+
+What if you want to add a new Element as a *firstChild*, or in the middle of a set of
+existing Child Elements?  To do this, you can use the *insertBefore()* method.
+
+First, create a new Element Node, eg:
+
+        var newTag = doc.dom.createElement('myInsertedTag');
+
+Let's insert this before the *myGrandChildTag* Tag:
+
+        var gc = doc.dom.getElementsByTagName('myGrandChildTag')[0]
+        gc.insertBefore(newTag, gc);
+        console.log(doc.dom.output(2));
+
+        <myTag>
+          <myChildTag class="bingo" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <myInsertedTag />
+            <myGrandChildTag>
+              Some text content
+            </myGrandChildTag>
+          </mySecondChildTag>
+        </myTag>
+
+The *insertBefore()* method is a bit strange in terms of its syntax.  It can actually
+be applied by any Element, and it is the two arguments that actually specify the insertion
+point in the DOM:
+
+        anyNode.insertBefore(newElement, ElementToInsertBefore)
+
+So we could have used this and the result would be the same:
+
+        doc.dom.documentElement.insertBefore(newTag, el4);
+
+
+### insertBeforeChildren
+
+Something that neither *appendChild* nor *insertBefore* make easy is the insertion of
+a new Element between an existing *parent* Element and its existing Child Elements: in other
+words adding a new intermediate layer in an existing DOM hierarchy.
+
+It can be done, but it involves removing the Child Nodes, appending the new Element to the
+now childless parent Node, and then re-appending the Child Nodes to the new Element.
+
+To save you all that hassle, you can use QEWD-JSdb's custom DOM method: *insertBeforeChildren()*.
+First, create the new Element:
+
+        var newTagx = doc.dom.createElement('intermediateTag');
+
+Get the Element that you want to be your new Tag's parent node, eg:
+
+        var par = doc.dom.getElementsByTagName('mySecondChildTag')[0]
+
+and now insert your new Element:
+
+        par.insertBeforeChildren(newTagx)
+        console.log(doc.dom.output(2));
+
+        <myTag>
+          <myChildTag class="bingo" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <intermediateTag>
+              <myInsertedTag />
+              <myGrandChildTag>
+                Some text content
+              </myGrandChildTag>
+            </intermediateTag>
+          </mySecondChildTag>
+        </myTag>
+
+In the listing you can see the *myInsertedTag* Element has been inserted between the
+*mySecondChildTag* Element and what were previously its Child Nodes.
+
+This turns out to be a really powerful method for making what would otherwise be
+really complex and difficult-to-implement changes to a hierarchical structure.
+
+
+## Removing Elements
+
+### *removeChild()*
+
+You may need to remove Elements from a DOM.  To do so you use the
+*removeChild()* method.  You need to be careful, however: when you remove
+an Element, you are actually detatching it (**and any of its Child Nodes**)
+from the DOM tree.  By default, it will still exist in the DOM, but it's just disconnected
+from anything, so won't appear when you output the DOM as XML for example.
+However, the QEWD-JSdb version of the *removeChild()* method allows you to optionally
+specify that the removed Element (and its sub-tree of Child Nodes) is permanently
+deleted from the DOM.
+
+
+
+
+
+### *removeAsParent()*
 
 
 ... To be continued

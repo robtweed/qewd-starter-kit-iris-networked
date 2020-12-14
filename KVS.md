@@ -31,7 +31,7 @@ standard QEWD-JSdb APIs.  They are all Open Source APIs, and
 you are free to inspect and use the code as you wish, in accordance with the Apache 2 license under
 which they are made available.
 
-Find the [LISTs source code here](https://github.com/robtweed/ewd-document-store/tree/master/lib/proto/kvs).
+Find the [KVS source code here](https://github.com/robtweed/ewd-document-store/tree/master/lib/proto/kvs).
 
 ## Enabling Use of the KVS APIs
 
