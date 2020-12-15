@@ -1,7 +1,7 @@
 # The QEWD-JSdb DOM Database Model
  
 Rob Tweed <rtweed@mgateway.com>  
-12 December 2020, M/Gateway Developments Ltd [http://www.mgateway.com](http://www.mgateway.com)  
+15 December 2020, M/Gateway Developments Ltd [http://www.mgateway.com](http://www.mgateway.com)  
 
 Twitter: @rtweed
 
@@ -763,6 +763,8 @@ So let's compare this with the *childElements* property:
 
 ### Attributes
 
+#### *hasAttributes()*
+
 Typically you'll want to know whether the current Element has any Attributes,
 and, if so, access them.
 
@@ -797,6 +799,8 @@ Now interrogate the DOM about their Attributes:
 
         // false
 
+
+#### *attributes*
 
 We can get all of the Attributes for a Tag using the *attributes* property:
 
@@ -889,6 +893,9 @@ provide this Attr Node as the *setNamedItem()*'s argument.  Try it out:
         </myTag>
 
 
+#### Using *setAttribute()* to Set and Change Attribute Values
+
+
 You'll probably be thinking that it's a lot easier to use the Element Node's *setAttribute()*
 method, which is quite true, ie:
 
@@ -919,6 +926,22 @@ method, which is quite true, ie:
         </myTag>
 
 
+#### *getAttributes()*
+
+You may also find that the Named Node Map returned by the *attributes* property
+is overkill if all you want is the names and values of all the Attributes in an
+Element.  QEWD-JSdb provides a custom method: *getAttributes()* which you may
+find convenient.  Try it out:
+
+        var attrObj = tag1.getAttributes();
+
+        // { class: 'bingo', foo: 'bar', hello: 'world', id: 'firstTag', x: 200 }
+
+As you can see, *getAttributes()* is a *Getter* method that simply returns the attribute 
+names and values as an Object.
+
+
+#### Removing Attributes
 
 Removing an Attribute can also be done either using the *attributes*' *removeNamedItem()*
 method, or by using the simple Element Node's *removeAttribute()* method, eg:
@@ -936,6 +959,7 @@ method, or by using the simple Element Node's *removeAttribute()* method, eg:
           </mySecondChildTag>
         </myTag>
 
+----
 
 ## Inserting Elements
 
@@ -1020,6 +1044,7 @@ In the listing you can see the *myInsertedTag* Element has been inserted between
 This turns out to be a really powerful method for making what would otherwise be
 really complex and difficult-to-implement changes to a hierarchical structure.
 
+----
 
 ## Removing Elements
 
@@ -1034,11 +1059,368 @@ However, the QEWD-JSdb version of the *removeChild()* method allows you to optio
 specify that the removed Element (and its sub-tree of Child Nodes) is permanently
 deleted from the DOM.
 
+The *removeChild()* method is applied to the parent Element of the Element you want to remove.
+
+For example, in your DOM that represents this XML:
+
+        <myTag>
+          <myChildTag class="bingo" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <intermediateTag>
+              <myInsertedTag />
+              <myGrandChildTag>
+                Some text content
+              </myGrandChildTag>
+            </intermediateTag>
+          </mySecondChildTag>
+        </myTag>
 
 
+to remove the *intermediateTag* Element (and its sub-tree of Nodes), you would apply
+*removeChild()* to its parent *mySecondChildTag* Element, eg:
+
+        var parTag = doc.dom.getElementsByTagName('mySecondChildTag')[0]
+        var imTag = doc.dom.getElementsByTagName('intermediateTag')[0]
+        parTag.removeChild(imTag)
+        console.log(doc.dom.output(2));
+
+
+        <myTag>
+          <myChildTag class="bingo" hello="world" id="firstTag" />
+          <mySecondChildTag />
+        </myTag>
+
+
+If you look in IRIS, you'll see that the removed Nodes are still in the Global - they've just
+been detached from the DOM tree, so don't appear in the XML when listed.
+
+Just to prove this, you can get them back:
+
+        parTag.appendChild(imTag)
+        console.log(doc.dom.output(2));
+
+and as if by magic, they re-appear:
+
+        <myTag>
+          <myChildTag class="bingo" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <intermediateTag>
+              <myInsertedTag />
+              <myGrandChildTag>
+                Some text content
+              </myGrandChildTag>
+            </intermediateTag>
+          </mySecondChildTag>
+        </myTag>
+
+Of course, you could have re-attached them to any of the DOM Nodes if you'd wanted - something
+you might want to try out.  You'll also notice that the links between the removed Nodes were
+still in place, so the entire sub-tree was recovered.
+
+Now let's repeat the *removeChild()*, but this time we'll physically delete them from the
+QEWD-JSdb storage (ie from the IRIS Global):
+
+        parTag.removeChild(imTag, true)
+        console.log(doc.dom.output(2));
+
+If you look in IRIS at the *^jsdbDom* Global, you'll see that the detached Nodes have all been
+deleted, and now you won't be able to re-attach them.
 
 
 ### *removeAsParent()*
+
+As you've seen, *removeChild()* removes not only the specified Child Node but also its
+entire sub-tree on descendent Nodes.
+
+What if you just want to remove the Child Node, but retain all its Child Node, effectively
+moving them up a level to replace the removed Child and become Child Nodes of the parent?
+
+You could do that, but it would require a laborious and potentially tricky sequence of
+detaches and re-attaches.  However, to save you all that bother, QEWD-JSdb provides
+a custom method called *removeAsParent()*.
+
+So let's go back to our previous DOM:
+
+        <myTag>
+          <myChildTag class="bingo" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <intermediateTag>
+              <myInsertedTag />
+              <myGrandChildTag>
+                Some text content
+              </myGrandChildTag>
+            </intermediateTag>
+          </mySecondChildTag>
+        </myTag>
+
+
+Suppose we want to remove the *intermediateTag* Element, but retain its Child Nodes, so
+they now become Child Nodes of the *mySecondChildTag* Element.  We could do that as follows:
+
+        var imTag = doc.dom.getElementsByTagName('intermediateTag')[0]
+        imTag.removeAsParent()
+        console.log(doc.dom.output(2));
+
+The result is this:
+
+        <myTag>
+          <myChildTag class="bingo" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <myInsertedTag />
+            <myGrandChildTag>
+              Some text content
+            </myGrandChildTag>
+          </mySecondChildTag>
+        </myTag>
+
+Note that the detached *intermediateTag* Element is still in the DOM.  To permanently
+remove it, add *true* as an argument, ie:
+
+        imTag.removeAsParent(true)
+
+
+You'll have probably realised that the *removeAsParent()* method reverses the effect of
+the *insertBeforeChildren()* method that was described earlier.
+
+----
+
+## Handling Text
+
+You've seen near the start of this Tutorial how Text can be added to an Element,
+either using the low-level *textContent* property or as a property of the argument
+provided to the *appendElement()* method.
+
+*textContent* is a read/write property.  So in our example DOM:
+
+        <myTag>
+          <myChildTag class="bingo" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <myInsertedTag />
+            <myGrandChildTag>
+              Some text content
+            </myGrandChildTag>
+          </mySecondChildTag>
+        </myTag>
+
+we could get the *textContent* of the *myGrandChildTag* Element:
+
+
+        var gcTag = doc.dom.getElementsByTagName('myGrandChildTag')[0]
+        console.log(gcTag.textContent);
+
+        // Some text content
+
+We could replace the text:
+
+        gcTag.textContent = 'Some different text'
+
+Or we could add text to the *myInsertedTag*:
+
+        var iTag = doc.dom.getElementsByTagName('myInsertedTag')[0]
+        iTag.textContent = 'Hello World!'
+        console.log(doc.dom.output(2));
+  
+The DOM will now appear as:
+
+        <myTag>
+          <myChildTag class="bingo" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <myInsertedTag>
+              Hello World!
+            </myInsertedTag>
+            <myGrandChildTag>
+              Some different text
+            </myGrandChildTag>
+          </mySecondChildTag>
+        </myTag>
+
+If you look at the XML DOM API you'll discover there are other ways to
+manipulate text, using Text Nodes.  These are fully supported in QEWD-JSdb, and
+allow you, for example, to create multiple Text Nodes within an Element.
+Feel free to experiment with these methods.  However, in my experience,
+the *textContent* read/write property is sufficient for all your likely needs.
+
+----
+
+## Other XML Tags
+
+So far we've been focusing on XML Elements and their associated Attributes and
+Text.  There are, of course, a number of other,optional XML Tags (represented,
+of course, as Nodes in the DOM):
+
+- Processing Instruction
+- Document Type
+- Comment
+- CDATA Section
+
+### Processing Instruction
+
+The most common so-called *Processing Instruction* you're likely to want to
+add to a DOM is the standard XML Declaration which is at the start of an XML
+Document, eg:
+
+        <?xml version="1.0" encoding="utf-8"?>
+
+QEWD-JSdb provides a custom method for adding this:
+
+        var xd = doc.dom.createXMLDeclaration()
+
+This creates the XML Declaration tag and inserts it before the *documentElement*
+Node.
+
+Although unlikely to be needed, you can modify the version and/or encoding by
+specifying them as arguments:
+
+        doc.dom.createXMLDeclaration(version, encoding)
+
+By default, the version is *1.0* and the encoding is *utf-8*.
+
+
+If you need to create other Processing Instructions, do so using:
+
+        var pi = doc.dom.createProcessingInstruction(target, data)
+
+You then need to append or insert the resulting Processing Instruction Node
+into the appropriate place in your DOM.
+
+
+### Document Type Definition
+
+You can add a Document Type Definition (DTD) to your DOM by using
+the *createDocumentType()* method, eg:
+
+        var dt = doc.dom.createDocumentType(name, publicId, systemId)
+
+The QEWD-JSdb version of this method recognises a number of common names, mainly
+for HTML/XHTML documents, eg:
+
+        var dt = doc.dom.createDocumentType('html4_strict')
+
+This is shorthand for:
+
+        var name = 'HTML';
+        var publicId = '-//W3C//DTD HTML 4.01//EN';
+        var systemId = 'http://www.w3.org/TR/html4/strict.dtd';
+        var dt = doc.dom.createDocumentType(name, publicId, systemId)
+
+
+Shortcuts exist for:
+
+- html4_strict
+- html4_transitional
+- html4_frameset
+- xhtml1_strict
+- xhtml1_transitional
+
+
+You must append or insert the returned DocumentType Node into your DOM.  Normally
+you would use *insertBefore()* to add it before the *documentElement* Node.
+
+You can interrogate the DOM to access its DocumentType Node (if present), by
+using its *docType* property, eg:
+
+        var dt = doc.dom.docType;
+
+and view its name:
+
+        console.log(dt.name)
+
+        // HTML
+
+Note that if you apply an HTML DTD to your DOM, the behaviour of the *output()* method
+changes.  All Element (Tag) names will be converted to lower case, and certain Tag Names,
+if recognised as relevant HTML tags, will be displayed as *void* tags, eg *input* and *link* tags
+will be shown without an explicit closing tag, eg:
+
+        <input type="text">
+
+rather than
+
+        <input type="text" />
+
+
+### Comments
+
+You can add Comment Nodes to your DOM using the *createComment()* method, eg:
+
+        var cmnt = doc.dom.createComment(text);
+
+You then append or insert the returned Comment Node to the appropriate Element Node, eg.
+
+        var cmnt = doc.dom.createComment('This is my comment');
+        parTag.appendChild(cmnt)
+
+When output the Document would appear as:
+
+        <myTag>
+          <myChildTag class="bingo" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <myInsertedTag>
+              Hello World!
+            </myInsertedTag>
+            <myGrandChildTag>
+              Some different text
+            </myGrandChildTag>
+            <!--This is my comment-->
+          </mySecondChildTag>
+        </myTag>
+
+
+### CDATA Section
+
+You can add CDATA Section Nodes to your DOM using the *createCDATASection()* method, eg:
+
+        var cdata = doc.dom.createCDATASection(text);
+
+You then append or insert the returned CDATA Section Node to the appropriate Element Node, eg.
+
+        var cdata = doc.dom.createCDATASection('Some <CDATA> data & then some');
+        parTag.appendChild(cdata)
+
+When output the Document would appear as:
+
+        <myTag>
+          <myChildTag class="bingo" hello="world" id="firstTag" />
+          <mySecondChildTag>
+            <myInsertedTag>
+              Hello World!
+            </myInsertedTag>
+            <myGrandChildTag>
+              Some different text
+            </myGrandChildTag>
+            <!--This is my comment-->
+            <![CDATA[Some <CDATA> data & then some]]>
+          </mySecondChildTag>
+        </myTag>
+
+----
+
+## Ingesting XML
+
+You aren't limited to programmatically-generating DOMs.  QEWD-JSdb's DOM 
+implementation includes a *parser* module which includes method for
+ingesting:
+
+- XML from a file (*parseFile()*)
+- XML from a text variable (*parseText()*)
+
+The *parser* module makes use of the standard Node.js *sax* module for parsing the
+file or text input, and its events trigger the QEWD-JSdb COM methods which store the
+parsed XML as a persistent DOM in IRIS.
+
+----
+
+## Querying DOMs using XPath
+
+----
+
+## Extending DOMs with *UserData*
+
+
+----
+
+## Using JSON with the DOM
+
 
 
 ... To be continued
