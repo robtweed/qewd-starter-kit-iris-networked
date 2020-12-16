@@ -12,6 +12,54 @@ Google Group for discussions, support, advice etc: [http://groups.google.co.uk/g
 This document provides background information on the *Persistent XML Document Object Model (DOM)*
  NoSQL database model that is included with QEWD-JSdb.
 
+#Index
+
+- [About the DOM Database Model](#about-the-dom-database-model)
+- [Source Code for the DOM APIs](#source-code-for-the-dom-apis)
+- [Enabling Use of the DOM APIs](#enabling-use-of-the-dom-apis)
+- [Building a DOM Programmatically](#building-a-dom-programmatically)
+  - [Getting Started](#getting-started)
+  - [The documentNode](#the-documentnode)
+  - [Adding an XML Tag](#adding-an-xml-tag)
+    - [Low-Level APIs](#low-level-apis)
+      - [createElement()](#createelement)
+      - [appendChild()](#appendchild)
+      - [Add Another Tag](#addanothertag)
+      - [setAttribute()](#setattribute)
+      - [textContent](#textcontent)
+    - [High-Level Method for Tag Creation](#high-level-method-for-tag-creation)
+  - [The Persistent DOM](#the-persistent-dom)
+  - [Navigating the DOM](#navigating-the-dom)
+    - [Navigating Between Adjacent Elements](#navigating-between-adjacent-elements)
+    - [*getElementsByTagName()*](#getelementsbytagname)
+    - [*getElementById()*](#getelementbyid)
+  - [Interrogating and Manipulating the DOM](#interrogating-and-manipulating-the-dom)
+    - [Child Elements and Child Nodes](#child-elements-and-child-nodes)
+    - [Attributes](#attributes)
+      - [*hasAttributes()*](#hasattributes)
+      - [The *attributes* Property](#the-attributes-property)
+      - [Using *setAttribute()* to Set and Change Attribute Values](#using-setattribute-to-set-and-change-attribute-values)
+      - [*getAttributes()*](#getattributes)
+      - [Removing Attributes](#removing-attributes)
+  - [Inserting Elements](#inserting-elements)
+    - [*insertBefore()*](#insertbefore)
+    - [*insertBeforeChildren()*](#insertbeforechildren)
+  - [Removing Elements](#removing-elements)
+    - [*removeChild()*](#removechild)
+    - [*removeAsParent()*](#removeasparent)
+  - [Handling Text](#handling-text)
+  - [Other XML Nodes](#other-xml-nodes)
+    - [Processing Instruction](#processing-instruction)
+    - [Document Type Definition](#document-type-definition)
+    - [Comments](#comments)
+    - [CDATA Section](#cdata-section)
+- [Ingesting XML](#ingesting-xml)
+- [Querying DOMs using XPath](#querying-doms-using-xpath)
+- [Extending DOMs with *UserData*](#extending-doms-with-userdata)
+- [Using JSON with the DOM](#using-json-with-the-dom)
+- [Conclusions](#conclusions)
+
+
 # About the DOM Database Model
 
 The *DOM* database model is an implementation of the [W3C XML DOM API](https://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/introduction.html).
@@ -156,7 +204,7 @@ A DOM can, of course, only have one *documentNode*.
 If you look in the IRIS Global that represents our DOM, you'll see how and where these
 properties are stored.
 
-## Add an XML Tag
+## Adding an XML Tag
 
 There are two ways to add an XML Tag to our DOM:
 
@@ -604,7 +652,7 @@ Because *id*s are unique, the *getElementById()* method returns the matching Ele
 If the specified *id* doesn't exist, it returns a *null*.
 
 
-## Interrogating the DOM
+## Interrogating and Manipulating the DOM
 
 You'll often want to know about features or details about the part of the DOM you're currently in.
 
@@ -800,7 +848,7 @@ Now interrogate the DOM about their Attributes:
         // false
 
 
-#### *attributes*
+#### The *attributes* Property
 
 We can get all of the Attributes for a Tag using the *attributes* property:
 
@@ -1242,7 +1290,7 @@ the *textContent* read/write property is sufficient for all your likely needs.
 
 ----
 
-## Other XML Tags
+## Other XML Nodes
 
 So far we've been focusing on XML Elements and their associated Attributes and
 Text.  There are, of course, a number of other,optional XML Tags (represented,
@@ -1395,7 +1443,7 @@ When output the Document would appear as:
 
 ----
 
-## Ingesting XML
+# Ingesting XML
 
 You aren't limited to programmatically-generating DOMs.  QEWD-JSdb's DOM 
 implementation includes a *parser* module which includes method for
@@ -1408,19 +1456,651 @@ The *parser* module makes use of the standard Node.js *sax* module for parsing t
 file or text input, and its events trigger the QEWD-JSdb COM methods which store the
 parsed XML as a persistent DOM in IRIS.
 
+*parser* is available as a property of a QEWD-JSdb DOM, eg in a back-end REST API
+method or interactive message handler method:
+
+        var doc = this.use('jsdbDom', 'demo');
+        doc.enable_dom();
+        doc.delete();
+        var parser = doc.dom.parser;
+
+## *parseFile()*
+
+To ingest XML from a file and parse it into a QEWD-JSdb DOM, use the *parseFile()* method.
+This takes two arguments:
+
+- **filepath**: the file path of the XML file to be ingested
+- **callback**: a function that will be invoked when the parsing has completed.  This function
+has a single argument: the QEWD-JSdb DOM object that has been created.
+
+You can try it out.  You won't be able to use the *parseFile()* method interactively in
+the Node.js REPL, but you can run it via a script file.
+
+You'll find an 
+[example XML document in this repository](https://github.com/robtweed/qewd-starter-kit-iris-networked/blob/master/example.xml).  Download it and put it into your QEWD system's
+installation directory (eg ~/qewd or C:\qewd).  Then create a file in the same
+directory named *loadxml.js* containing:
+
+
+        var jsdb = require('./jsdb_shell');
+        var doc = jsdb.use('exampleDom');
+        doc.enable_dom();
+        doc.delete();
+        var filepath = '/home/ubuntu/qewd/example.xml';  // change as appropriate
+        doc.dom.parser.parseFile(filepath, function(dom) {
+          console.log(dom.output(2));
+        });
+
+Now, in a Terminal Window (or Command Prompt) run the *loadxml.js* script:
+
+        node loadxml
+
+
+After a second or two you should see the XML listing:
+
+        <doc>
+          <foo location="Drumcondra">
+            <bar name="Cat and Cage">
+              pub 1
+            </bar>
+            <bar name="Fagan's" owner="John" tied="true">
+              pub 2
+            </bar>
+            <offlicense name="oddbins" />
+            <bar name="Gravedigger's">
+              pub 3
+            </bar>
+            <bar name="Ivy House">
+              pub 4
+            </bar>
+          </foo>
+          <foo location="Town">
+            <bar name="Peter's Pub">
+              pub 5
+            </bar>
+            <bar name="Grogan's">
+              pub 6
+            </bar>
+            <bar name="Hogans's">
+              club 1
+            </bar>
+            <bar name="Brogan's" owner="James" tied="false">
+              pub 8
+            </bar>
+            <bar closed="yes">
+              pub 9
+            </bar>
+            <offlicense name="unwins" />
+          </foo>
+          <aaa>
+            <bbb>
+              <bar name="Robin Hood">
+                pub 10
+                <beer name="guinness" />
+                <beer name="tetleys" />
+              </bar>
+              <bar>
+                As yet un-named pub
+              </bar>
+            </bbb>
+            <foo>
+              <ccc />
+            </foo>
+          </aaa>
+        </doc>
+
+
+Take a look in IRIS and you'll find this DOM's data in a Global named *^exampleDOM*
+
+You can now access it and use the QEWD-JSdb DOM API methods on it within the Node.js REPL,
+in a REST API method or in an interactive message handler.  For example, in the REPL:
+
+        var jsdb = require('./jsdb_shell');
+        var doc = jsdb.use('exampleDom');
+        doc.enable_dom();
+
+and you can now access it via *doc.dom*, eg:
+
+        var fooTags = doc.dom.getElementsByTagName('foo');
+        ... etc
+
+
+## *parseText()*
+
+To ingest a stream of XML from a text variable and parse it into a QEWD-JSdb DOM, use the *parseText()* method.
+This takes two arguments:
+
+- **text**: the variable containing the XML to be ingested
+- **callback**: a function that will be invoked when the parsing has completed.  This function
+has a single argument: the QEWD-JSdb DOM object that has been created.
+
+You can try it out.  You won't be able to use the *parsText()* method interactively in
+the Node.js REPL, but you can run it via a script file.
+
+Create a file in your QEWD system's installation directory (eg ~/qewd or C:\qewd)
+named *loadtext.js* containing:
+
+
+        var jsdb = require('./jsdb_shell');
+        var doc = jsdb.use('exampleDom2');
+        doc.enable_dom();
+        doc.delete();
+        var xml = '<xml><foo hello="world">Some Text</foo></xml>';
+        doc.dom.parser.parseText(xml, function(dom) {
+          console.log(dom.output(2));
+        });
+
+Now, in a Terminal Window (or Command Prompt) run the *loadxml.js* script:
+
+        node loadtext
+
+
+After a second or two you should see the XML listing:
+
+        <xml>
+          <foo hello="world">
+            Some Text
+          </foo>
+        </xml>
+
+Take a look in IRIS and you'll find this DOM's data in a Global named *^exampleDOM2*
+
+You can now access it and use the QEWD-JSdb DOM API methods on it within the Node.js REPL,
+in a REST API method or in an interactive message handler.  For example, in the REPL:
+
+        var jsdb = require('./jsdb_shell');
+        var doc = jsdb.use('exampleDom2');
+        doc.enable_dom();
+
+and you can now access it via *doc.dom*, eg:
+
+        var fooTags = doc.dom.getElementsByTagName('foo');
+        ... etc
+
+
 ----
 
-## Querying DOMs using XPath
+# Querying DOMs using XPath
+
+[XPath (XML Path Language)](https://www.w3.org/TR/1999/REC-xpath-19991116/) 
+is a query language for selecting nodes from an XML document.
+The XPath language is based on a tree representation of the XML document, and provides the ability to navigate around the tree, selecting nodes by a variety of criteria.
+
+XPath is normally implemented to use an in-memory XML DOM.  However, because QEWD-JSdb's 
+core DOM APIs conform to the XML DOM standard, the standard Node.js XPath module has been
+able to be used with QEWD-JSdb's persistent DOMs: the XPath module isn't even aware that the
+actual DOM data it is handling is actually stored in an IRIS database!
+
+QEWD-JSdb integrates the XPath module directly into the DOM's object, so it's
+immediately available to you without doing anything else.
+
+## Try out XPath
+
+Let's use the DOM you created in the previous section above: the one created from the
+*example.xml* file.  You can even try out XPath in the Node.js REPL.
+
+First load the *jsdb_shell* module and enable DOM access to the *^exampleDom*
+Global in IRIS:
+
+
+        var jsdb = require('./jsdb_shell');
+        var doc = jsdb.use('exampleDom');
+        doc.enable_dom();
+
+Let's try a simple XPath query, finding all *foo* Elements (ie Tags) anywhere in
+the DOM:
+
+        var fooTags = doc.dom.xpath('//foo')
+
+What's returned is an Array of Element Nodes, each one being a *foo* Element that it's
+found in the DOM.  There should be three.  Let's check:
+
+        fooTags.length
+
+        // 3
+
+and you can then inspect each member of the Array, eg:
+
+        fooTags[0].tagName
+
+        // foo
+
+        fooTags[0].getAttributes()
+
+        // { location: 'Drumcondra' }
+
+
+You could then try finding all *bar* Elements that are an immediate Child of a 
+*foo* Element, anywhere in the DOM:
+
+        var barTags = doc.dom.xpath('//foo/bar')
+
+        barTags.length
+
+        // 9
+
+        barTags[1].tagName
+
+        // bar
+
+        barTags[1].getAttributes()
+
+        // { name: "Fagan's", owner: 'John', tied: true }
+
+
+You can apply any valid XPath query to a QEWD-JSdb DOM.  The returned result will always be
+an Array of Nodes that matched the query.  If you're not familiar with XPath, take 
+a look at the 
+[list of examples]((https://github.com/robtweed/qewd-starter-kit-iris-networked/blob/master/xpath_query_examples.txt)
+ that you'll find in this repository.
+
 
 ----
 
-## Extending DOMs with *UserData*
+# Extending DOMs with *UserData*
+
+The XML DOM API includes a little-known feature which allows user-defined data to be
+associated with a DOM Node.  The so-called *userData* consists of key/object pairs.
+This feature allows the functionality of a DOM to be considerably enhanced.  For example, you are
+no longer restricted to Element Nodes having just Attributes and Text properties.  They could
+be adapted to be something on which you store any arbitrary objects, all within a hierarchical
+structure.
+
+QEWD-JSdb has implemented the relevant XML DOM APIs:
+
+- **setUserData()**: add a key/object pair to a DOM Node
+- **getUserData()**: retrieve the object for a specified key from a DOM Node
+ 
+It also implements several additional Node methods to make the use of *userData* flexible,
+easy and very powerful:
+
+- **getUserDataKeys()**: returns an Array of keys (if any) in a DOM Node
+- **hasUserData()**: returns true of an object exists for a specified key in a DOM Node
+- **deleteUserData()**: deletes the object for a specified key in a DOM Node
+
+The DOM Object (eg *doc.dom*) also includes a method named *walk()*.  This 
+recurses through all the Element Nodes in a DOM and invokes a function that you 
+specify for every Element that is found.  You could use this to access and retrieve
+*userData* stored at each Element in the DOM tree.
+
+Let's try these out in the Node.js REPL.
+
+We'll start by creating a new DOM with a few Elements.  For simplicity, we 
+won't bother adding Attributes or Text to them (though we could if we wanted to).
+We could do this quickly and easily by creating a Node.js script file that we
+then execute.  Create a file in your QEWD system's installation directory (eg ~/qewd or C:\qewd)
+named *userdataDOM.js* containing:
+
+
+        var jsdb = require('./jsdb_shell');
+        var doc = jsdb.use('userDataDom');
+        doc.enable_dom();
+        doc.delete();
+        var xml = '<xml><foo><bar /><bar /></foo></xml>';
+        doc.dom.parser.parseText(xml, function(dom) {
+          console.log(dom.output(2));
+        });
+
+Run it as follows:
+
+        node userDataDOM
+
+and you see this:
+
+        <xml>
+          <foo>
+            <bar />
+            <bar />
+          </foo>
+        </xml>
+
+
+OK so now we have this simple DOM, let's add some *userData* to the *foo* Element.
+We'll do these subsequent steps in the REPL, so start it up:
+
+        node
+
+        Welcome to Node.js v14.5.0.
+        Type ".help" for more information.
+        >
+
+Then load the *jsdb_shell* module and enable access to the DOM we just created
+
+        var jsdb = require('./jsdb_shell');
+        var doc = jsdb.use('userDataDom');
+        doc.enable_dom();
+
+Get a pointed to the *foo* Element:
+
+        var foo = doc.dom.getElementsByTagName('foo')[0]
+
+Now we'll create an object:
+
+        var obj = {hello: 'world', foo: 'bar'}
+
+and add it as *userData* to the *foo* Element, using a *key* of *test*:
+
+        foo.setUserData('test', obj)
+
+Now take a look in IRIS at the *^userDataDom* Global that is storing the DOM's data.
+In Node 3 (representing the *foo* Element) you'll see this:
+
+        ^userDataDom("node",3,"firstChild")=4
+        ^userDataDom("node",3,"lastChild")=5
+        ^userDataDom("node",3,"nodeName")="foo"
+        ^userDataDom("node",3,"nodeNo")=3
+        ^userDataDom("node",3,"nodeType")=1
+        ^userDataDom("node",3,"parent")=2
+        ^userDataDom("node",3,"ud","test","foo")="bar"
+        ^userDataDom("node",3,"ud","test","hello")="world"
+
+The *ud* subscript denotes *userData*.
+
+So the *userData* has definitely been saved correctly against the *foo* Element!
+
+Now try listing the DOM:
+
+        console.log(doc.dom.output(2))
+
+Once again, all you'll see is the XML:
+
+        <xml>
+          <foo>
+            <bar />
+            <bar />
+          </foo>
+        </xml>
+
+*userData* isn't actually shown or retrieved when you output the DOM as XML.
+
+Let's try some of the other *userData* methods though.
+
+        foo.getUserDataKeys()
+
+        // [ 'test' ]
+
+        foo.hasUserData('test')
+
+        // true
+
+        foo.hasUserData('dummy')
+
+        // false
+
+        var data = foo.getUserData('test')
+
+        // { foo: 'bar', hello: 'world' }
+
+
+You can add as many key/Object pairs to a Node as you wish.  So we could do this:
+
+
+        obj = {more: 'data'}
+        foo.setUserData('more', obj)
+
+        foo.getUserDataKeys()
+
+        // [ 'more', 'test' ]
+
+
+        data = foo.getUserData('more')
+
+        // {more: 'data'}
+
+
+And we could delete the *userData* with the *more* key:
+
+        foo.deleteUserData('more')
+
+        foo.getUserDataKeys()
+
+        // [ 'test' ]
+
+
+We could now write a script that uses the DOM's *walk()* method to recurse
+through all the Elements in the DOM and retrieve any *userData* it finds.
+
+The *walk()* method is invoked as follows:
+
+        doc.dom.walk(params, fn);
+
+- *params*: an optional object you can define for use within *fn*
+- *fn*: a function that is invoked every time an Element is found in the DOM. This function has a
+single argument:
+
+  - *params*
+
+  Its context (ie *this*) is the Element Node that has been found.
+
+So let's write our script.  Name it *walk.js*:
+
+        var jsdb = require('./jsdb_shell');
+        var doc = jsdb.use('userDataDom');
+        doc.enable_dom();
+
+        var fn = function(params) {
+          console.log('Element: ' + this.tagName);
+          var keys = this.getUserDataKeys();
+          var _this = this;
+          keys.forEach(function(key) {
+            var data = _this.getUserData(key);
+            console.log('userData for key ' + key);
+            console.log(JSON.stringify(data, null, 2));
+          });
+        };
+        var params = {};
+        doc.dom.walk(params, fn);
+
+
+And then run it:
+
+        node walk
+
+and you should see:
+
+        Element: xml
+        Element: foo
+        userData for key test
+        {
+          "foo": "bar",
+          "hello": "world"
+        }
+        Element: bar
+        Element: bar
+
+Now try adding more *userData* to some of the other Elements in the DOM and see what it
+looks like when you re-run the *walk.js* script!
+
+The DOM is normally thought of as a means of handling XML, but QEWD-JSdb's persistent DOM
+storage, coupled with the *userData* functionality means its applicability can be
+re-thought: it becomes a way of managing hierarchical data, all of which can be
+queried using XPath!
+
 
 
 ----
 
-## Using JSON with the DOM
+# Using JSON with the DOM
+
+So far we've seen the DOM used as a means of representing an XML Document.  However, as
+mentioned in the previous section above, the DOM isn't restricted to representing XML, even
+though that's what it was originally designed for.  It can be used to represent any
+hierarchical dataset, with the benefits that:
+
+- once represented in DOM format, you can use
+the DOM API methods to manipulate and modify its content in very sophisticated ways
+
+- you can query the database using XPath.
+
+Now, the hierarchical structure that has largely superceded XML is JSON.  So that begs
+the question: can JSON be represented as a persistent DOM?  The answer is yes.
+The trick is essentially to represent each property name within a JSON document as a DOM
+Element, and store values of leaf properties as Text Nodes.
+
+QEWD-JSdb provides you with a JSON parser which will ingest JSON documents and save them as
+a DOM.  Like the XML *parser*, it's provided as a method of the DOM Object (eg *doc.dom*)
+named *parseJSON()*:
+
+        doc.dom.parseJSON(json)
+
+It takes a single argument: an in-memory JavaScript/JSON Object.
+
+
+You can parse and store a JSON Document in your QEWD REST API Methods, interactive message
+handler functions, or in the REPL using the *jsdb_shell* module.
+
+For example, using the REPL, try this:
+
+        var jsdb = require('./jsdb_shell')
+        var doc = jsdb.use('jsonDom')
+        doc.enable_dom()
+        doc.delete()
+        var json = {foo: {bar: {hello: 'world'}}}
+        doc.dom.parseJSON(json)
+
+You could check to see how your JSON is being represented in the DOM:
+
+        console.log(doc.dom.output(2))
+
+        <json>
+          <foo>
+            <bar>
+              <hello type="string">
+                world
+              </hello>
+            </bar>
+          </foo>
+        </json>
+
+You'll see that the JSON conversion to a corresponding XML structure is probably fairly
+intuitive.  Notice the data typing that is done automatically based on the JSON data
+type in the incoming JSON Object.
+
+Let's try something a bit more complex:
+
+
+        doc.delete()
+        json = {foo: {bar: {hello: 'world', accept: true, x: 10, colours: ['Red', 'Blue', 'Green']}}}
+        doc.dom.parseJSON(json)
+        console.log(doc.dom.output(2))
+
+and you'll see it's representing this new JSON as:
+
+        <json>
+          <foo>
+            <bar>
+              <hello type="string">
+                world
+              </hello>
+              <accept type="boolean">
+                true
+              </accept>
+              <x type="number">
+                10
+              </x>
+              <colours type="array">
+                <val type="string">
+                  Red
+                </val>
+                <val type="string">
+                  Blue
+                </val>
+                <val type="string">
+                  Green
+                </val>
+              </colours>
+            </bar>
+          </foo>
+        </json>
+
+
+How do we get it back as JSON again?  For that we use the *outputAsJSON()* method:
+
+        var obj = doc.dom.outputAsJSON()
+        console.log(JSON.stringify(obj, null, 2))
+        
+        {
+          "foo": {
+            "bar": {
+              "hello": "world",
+              "accept": true,
+              "x": 10,
+              "colours": [
+                "Red",
+                "Blue",
+                "Green"
+              ]
+            }
+          }
+        }
+
+
+One word of warning: don't assume that this capability means that you can use it to output
+any XML document as a corresponding JSON document.  You'll get some JSON out, but it may be
+somewhat mangled!  That's because the *outputAsJSON()* method is expecting to see that stylised
+XML format  that it uses to represent a JSON document.
+
+Now, we've seen in the basic QEWD-JSdb APIs that you can use the *setDocument()* and 
+*getDocument()* methods to save JSON to an IRIS Global and retrieve it again.  Why, then,
+would you use the QEWD-JSdb DOM to save and retrieve it instead?  It seems an unnecessary
+overhead.
+
+The answer is that for most general situations, the basic *setDocument()* and
+*getDocument()* methods are perfectly adequate, and are also more performant and
+use much less IRIS Global storage than the DOM for representing the JSON.
+
+However, there are three potential benefits of using the DOM for JSON:
+
+- handling deep JSON with deep hierarchies and long property names:
+
+  IRIS Globals have a very strict, and actually quite low, limit on the total subscript
+length for an individual Global Node.  *setDocument()* maps each property name in a JSON
+hierarchy to a correspondingly-named subscript.  In a deeply nested JSON hierarchy and/or
+if property names are long, it's possible to hit this IRIS subscript length limit.
+
+  By comparison, as you'll have seen when you inspect DOM storage in IRIS, each Node is
+represented in a flattened structure, with each Node containing pointers to its surrounding
+Nodes.  It doesn't matter how deep the hierarchy of Nodes is, or how long the property
+name (represented as the *nodeValue* value) is.
+
+  So, if your JSON document is beyond the capabilities of *setDocument()*, use
+the DOM to store it.
+
+- if you need to manipulate, modify or navigate the JSON content.  The DOM API methods
+you've tried out in this tutorial will allow you to perform such tasks with ease, and allow
+you to perform complex transformations that would be otherwise very difficult to achieve
+by any other means.
+
+- if you need to interrogate or run queries on your JSON, as soon as it's in the DOM, you
+have all the capabilities of XPath at your disposal.  The ability to apply XPath queries
+to JSON is a very powerful and intriguing capability!
 
 
 
-... To be continued
+# Conclusions
+
+That concludes this tutorial on the use of the QEWD-JSdb DOM Data Model.
+
+I hope you agree, it's a very powerful technology, and a great use of IRIS's Global
+Storage.  For XML Documents, its benefits are clear.  However, the trick is to
+not believe that the DOM is limited to XML.  With the ability to customise the DOM
+content with *userData*, and the ability to map JSON to the DOM, the capabilities
+of the QEWD-JSdb's persistent DOM are limited only by your imagination.
+
+And remember that, at the end of the day, in IRIS terms, although the DOM is being
+stored in simple low-level Global Nodes, there's nothing to stop you adding your own
+IRIS Object mappings to the DOM Globals, opening up even more opportunities to
+further make use of the stored DOM data in IRIS itself!
+
+
+
+
+
+
+
+
+
+
+
+
+
